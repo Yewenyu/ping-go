@@ -72,8 +72,9 @@ func main() {
 		var success = 0
 		var loss = 0
 		var err1,err2,err3 int
+		var ss = stringss[0:100]
 		fmt.Println(time.Now().String())
-		vs := goPing.StartTcpPings(stringss, 1, 5, 1,10, true)
+		vs := goPing.StartTcpPings(ss, 1, 3, 1,2, true)
 		for _,v := range vs{
 			if v.Loss == 0{
 				success += 1

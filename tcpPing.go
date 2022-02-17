@@ -12,13 +12,32 @@ import (
 )
 
 func StartTcpPings(addrs []string, pingCount int, timeout int, interval int,groupCount int, checkAlive bool) []PingResults {
-	var wg sync.WaitGroup
+	
 	count := len(addrs)
-	wg.Add(count)
+	
 
-	var lock sync.Mutex
-	var resultm = make([]PingResults, count)
-	var gc = count / groupCount
+	var resultm = make([]PingResults,0)
+	var sC = groupCount
+	if sC == 0{
+		sC = 1
+	}else if sC > count{
+		sC = 1
+	}
+	var gc = count / sC
+	var groupChan = make(chan PingResults)
+	var endChan = make(chan int,gc)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(){
+		for{
+			result := <- groupChan
+			resultm = append(resultm, result)
+			if len(resultm) == count{
+				wg.Done()
+				break
+			}
+		}
+	}()
 	var currentPingCount = 0
 	for i, addr := range addrs {
 		arr := strings.Split(addr, ":")
@@ -27,33 +46,20 @@ func StartTcpPings(addrs []string, pingCount int, timeout int, interval int,grou
 		if err != nil {
 			continue
 		}
-		lock.Lock()
 		currentPingCount += 1
-		lock.Unlock()
 		go func(i int) {
 			r := StartTcpPing(host, port, pingCount, timeout, interval, checkAlive)
-			
-			lock.Lock()
-			resultm[i] = r
-			currentPingCount -= 1
-			lock.Unlock()
-			wg.Done()
+			endChan <- 1
+			groupChan <- r
 			debug.FreeOSMemory()
 		}(i)
-		for{
-			lock.Lock()
-			if currentPingCount < gc{
-				lock.Unlock()
-				break
-			}
-			lock.Unlock()
+		if currentPingCount > gc{
+			currentPingCount -= <-endChan
 		}
-		
-		
 	}
-
-	
 	wg.Wait()
+	close(endChan)
+	close(groupChan)
 	debug.FreeOSMemory()
 	runtime.GC()
 	return resultm
