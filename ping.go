@@ -1,6 +1,7 @@
 package goPing
 
 import (
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ type PingResults struct {
 	Port int     `json:"port"`
 	Time int     `json:"time"`
 	Loss float64 `json:"loss"`
+	ErrType int
 }
 
 func StartPings(hosts []string, pingCount int) map[string]PingResults {
@@ -42,8 +44,9 @@ func StartPings(hosts []string, pingCount int) map[string]PingResults {
 			debug.FreeOSMemory()
 		}(host)
 	}
-
 	wg.Wait()
+	debug.FreeOSMemory()
+	runtime.GC()
 	return resultm
 }
 
