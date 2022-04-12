@@ -5,8 +5,8 @@ BUILD_VERSION   := $(shell git describe --tags)
 GIT_COMMIT_SHA1 := $(shell git rev-parse --short HEAD)
 BUILD_TIME      := $(shell date '+%Y-%m-%d-%H-%M-%S')
 BUILD_NAME      := golib
-VERSION_PACKAGE_NAME := github.com/ping
-TARGETPACKET := github.com/ping
+VERSION_PACKAGE_NAME := github.com/Yewenyu/ping-go
+TARGETPACKET := github.com/Yewenyu/ping-go
 FRAMEWORKNAME := GoPing
 
 modinit:
@@ -47,10 +47,16 @@ build-ios:
 	cd output && zip -r export_ios_${BUILD_VERSION}_${GIT_COMMIT_SHA1}_${BUILD_TIME}.zip ios
 	open output/ios
 
+# build-mac:
+# 	rm -rf output/mac
+# 	mkdir -p output/mac
+# 	export GO111MODULE=on
+# 	go build -ldflags "-w -s" -buildmode=c-archive -o output/mac/goPing.a client/main.go
+# 	export GO111MODULE=off
+# 	open output/mac
+
 build-mac:
 	rm -rf output/mac
 	mkdir -p output/mac
-	export GO111MODULE=on
-	go build -ldflags "-w -s" -buildmode=c-archive -o output/mac/goPing.a client/main.go
-	export GO111MODULE=off
+	gomobile bind -target macos -o output/mac/${FRAMEWORKNAME}.xcframework ${TARGETPACKET}
 	open output/mac
